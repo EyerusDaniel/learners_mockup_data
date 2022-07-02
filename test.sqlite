@@ -1,0 +1,149 @@
+-- SELECT * FROM users;
+-- SELECT * FROM progress;
+
+
+-- First, use SELECT * from both tables and use your knowledge of queries and aggregate functions to get to know the data:
+
+-- What are the Top 25 schools (.edu domains)?
+
+SELECT email_domain as top_schools, COUNT(user_id) as total_users
+FROM users
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 25;
+
+-- How many .edu learners are located in New York?
+
+SELECT city, COUNT (user_id) as total_users
+FROM users
+WHERE city = 'New York';
+
+-- How many of these Codecademy learners are using the mobile app?
+
+SELECT mobile_app, COUNT(mobile_app) as total_users
+
+FROM users
+GROUP BY 1;
+
+-- query for the sign up counts for each hour.
+
+SELECT sign_up_at, 
+  strftime('%H', sign_up_at) as count
+FROM users 
+GROUP BY 1 
+LIMIT 20;
+
+-- Join the two tables using JOIN and then see what you can dig out of the data!
+
+-- Do different schools (.edu domains) prefer different courses?
+
+WITH users_progress AS(
+  SELECT *
+  FROM users u
+    LEFT JOIN progress p
+    ON u.user_id = p.user_id
+),
+ course_choice AS (
+  SELECT user_id,
+  email_domain, 
+  CASE 
+    WHEN learn_cpp = 'started' 
+    OR learn_cpp = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_cpp,
+  CASE
+    WHEN learn_sql = 'started'
+    OR learn_sql = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_sql,
+  CASE
+    WHEN learn_html = 'started'
+    OR learn_html = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_html,
+  CASE
+    WHEN learn_javascript = 'started'
+    OR learn_javascript = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_javascript,
+  CASE
+    WHEN learn_java = 'started'
+    OR learn_java = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_java
+FROM users_progress
+)
+SELECT email_domain, 
+  COUNT(email_domain) AS students,
+  ROUND(100.0 * SUM(taking_cpp)/COUNT(email_domain)) AS 'cpp(%)',
+  ROUND(100.0 * SUM(taking_sql)/COUNT(email_domain)) AS 'sql(%)',
+  ROUND(100.0 * SUM(taking_html)/COUNT(email_domain)) AS 'html(%)',
+  ROUND(100.0 * SUM(taking_javascript)/COUNT(email_domain)) AS 'javascript(%)',
+  ROUND(100.0 * SUM(taking_java)/COUNT(email_domain)) AS 'java(%)'
+FROM course_choice
+GROUP BY 1
+  HAVING COUNT(email_domain) > 9
+ORDER BY 2 DESC
+LIMIT 10;
+
+-- What courses are the New Yorkers students taking? and  What courses are the Chicago students taking?
+
+WITH users_progress AS(
+  SELECT *
+  FROM users u
+    LEFT JOIN progress p
+    ON u.user_id = p.user_id
+),
+ course_choice AS (
+  SELECT user_id,
+  email_domain, 
+  city,
+  CASE 
+    WHEN learn_cpp = 'started' 
+    OR learn_cpp = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_cpp,
+  CASE
+    WHEN learn_sql = 'started'
+    OR learn_sql = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_sql,
+  CASE
+    WHEN learn_html = 'started'
+    OR learn_html = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_html,
+  CASE
+    WHEN learn_javascript = 'started'
+    OR learn_javascript = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_javascript,
+  CASE
+    WHEN learn_java = 'started'
+    OR learn_java = 'completed'
+    THEN 1
+    ELSE 0
+    END AS taking_java
+FROM users_progress
+)
+SELECT city, 
+  COUNT(user_id) AS students,
+  ROUND(100.0 * SUM(taking_cpp)/COUNT(email_domain)) AS 'cpp(%)',
+  ROUND(100.0 * SUM(taking_sql)/COUNT(email_domain)) AS 'sql(%)',
+  ROUND(100.0 * SUM(taking_html)/COUNT(email_domain)) AS 'html(%)',
+  ROUND(100.0 * SUM(taking_javascript)/COUNT(email_domain)) AS 'javascript(%)',
+  ROUND(100.0 * SUM(taking_java)/COUNT(email_domain)) AS 'java(%)'
+FROM course_choice
+GROUP BY 1
+  HAVING  (city = 'Chicago')
+    OR (city = 'New York')
+ORDER BY 2 DESC;
